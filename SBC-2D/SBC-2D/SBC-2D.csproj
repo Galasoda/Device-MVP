@@ -222,12 +222,10 @@
     <Compile Include="Infrastructures\Device\IDevice.cs" />
     <Compile Include="Infrastructures\Device\IIoDevice.cs" />
     <Compile Include="Infrastructures\Device\SocketConfig.cs" />
-    <Compile Include="Infrastructures\Logger\LoggerStore.cs" />
     <Compile Include="Presenters\DeviceConnectionPresenter.cs" />
     <Compile Include="Presenters\DevicePresenter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Infrastructures\Logger\FileLogger.cs" />
     <Compile Include="Infrastructures\Ini\IniFile.cs" />
     <Compile Include="Shared\Enums.cs" />
     <Compile Include="Shared\Helper.cs" />

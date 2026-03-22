@@ -1,6 +1,5 @@
 ﻿using IniParser;
 using IniParser.Model;
-using SBC_2D.Infrastructures.Logger;
 using SBC_2D.Shared;
 using System.Collections.Generic;
 using System.Globalization;
@@ -97,7 +96,6 @@ namespace SBC_2D.Infrastructures.Ini
             value = IniFile.Read(section, key, defaultValue, filePath);
             if (value == null || value == defaultValue)
             {
-                LoggerStore.RecordCodeTrace(LogType.Debug, $"INI can not get value from [{section}] {key}.");
                 return false;
             }
             return true;

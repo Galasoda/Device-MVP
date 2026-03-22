@@ -10,9 +10,9 @@ namespace SBC_2D.Views.Interfaces
 {
     public interface IForm3View
     {
-        List<IDeviceConnectionView> DeviceConnectionViews { get; }
-        List<IIoView> InputViews { get; }
-        List<IIoView> OutputViews { get; }
+        IReadOnlyList<IDeviceConnectionView> DeviceConnectionViews { get; }
+        IReadOnlyList<IIoView> InputViews { get; }
+        IReadOnlyList<IIoView> OutputViews { get; }
         IDeviceConnectionView AddDeviceConnectionView();
         IIoView AddInputView(int number);
         IOutView AddOutputView(int number);

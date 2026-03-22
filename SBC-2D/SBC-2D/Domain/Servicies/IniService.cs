@@ -1,7 +1,6 @@
 ﻿using Advantech.Adam;
 using SBC_2D.Infrastructures.Device;
 using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Infrastructures.Logger;
 using SBC_2D.Shared;
 using System;
 using System.Collections.Generic;
@@ -65,10 +64,8 @@ namespace SBC_2D.Domain.Servicies
 
             if (!string.IsNullOrEmpty(bugInfo))
             {
-                LoggerStore.RecordCodeTrace(LogType.Debug, $"Setup INI [{section}] has following issues:\r\n{bugInfo}");
             }
 
-            LoggerStore.RecordCodeTrace(LogType.Debug, $"Completed without bug.");
             return path;
         }
 
@@ -93,9 +90,6 @@ namespace SBC_2D.Domain.Servicies
                     }
                     if (!string.IsNullOrEmpty(bugInfo))
                     {
-                        LoggerStore.RecordCodeTrace(
-                            LogType.Debug,
-                            $"Setup INI [{section}] has following issues:\r\n{bugInfo}");
                         continue;
                     }
                     SocketConfig config = new SocketConfig(ip, port);
@@ -105,10 +99,8 @@ namespace SBC_2D.Domain.Servicies
             }
             catch (Exception ex)
             {
-                LoggerStore.RecordCodeTrace(LogType.Warn, $"Exception {ex.Message}");
             }
 
-            LoggerStore.RecordCodeTrace(LogType.Debug, $"Geted device config from ini {_store.SetupFilePath}");
             return deviceConfig;
         }
 
@@ -132,19 +124,14 @@ namespace SBC_2D.Domain.Servicies
                 }
                 if (!string.IsNullOrEmpty(bugInfo))
                 {
-                    LoggerStore.RecordCodeTrace(
-                        LogType.Debug,
-                        $"Setup INI [{section}] has following issues:\r\n{bugInfo}");
                     return result;
                 }
                 result = new KeyValuePair<string, SocketConfig>(section, new SocketConfig(ip, port)); 
             }
             catch (Exception ex)
             {
-                LoggerStore.RecordCodeTrace(LogType.Warn, $"Exception {ex.Message}");
             }
 
-            LoggerStore.RecordCodeTrace(LogType.Debug, $"Geted device config from ini [{section}] {_store.SetupFilePath}");
             return result;
         }
 
@@ -220,9 +207,6 @@ namespace SBC_2D.Domain.Servicies
 
             if (!string.IsNullOrEmpty(bugInfo))
             {
-                LoggerStore.RecordCodeTrace(
-                    LogType.Debug,
-                    $"Setup INI [{section}] has following issues:\r\n{bugInfo}");
             }
 
             return config;
@@ -232,12 +216,8 @@ namespace SBC_2D.Domain.Servicies
         {
             string keyIp = "IP";
             IniFile.Write(section, keyIp, ip, _store.SetupFilePath);
-            LoggerStore.RecordSystem(LogType.Info, $"Writed [{section}] {keyIp} = {ip}.");
-            LoggerStore.RecordCodeTrace(LogType.Debug, $"Writed [{section}] {keyIp} = {ip}.");
             string keyPort = "PORT";
             IniFile.Write(section, keyPort, port, _store.SetupFilePath);
-            LoggerStore.RecordSystem(LogType.Info, $"Writed [{section}] {keyPort} = {port}.");
-            LoggerStore.RecordCodeTrace(LogType.Debug, $"Writed [{section}] {keyPort} = {port}.");
         }
 
         /* Helper From Model Layer */

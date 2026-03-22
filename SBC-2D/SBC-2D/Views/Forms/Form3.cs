@@ -13,22 +13,19 @@ namespace SBC_2D.Views
 {
     public partial class Form3 : Form, IForm3View
     {
-        private DevicePresenter _devicePresenter;
-        public List<IDeviceConnectionView> DeviceConnectionViews { get; }
-        public List<IIoView> InputViews { get; }
-        public List<IIoView> OutputViews { get; }
+        private readonly List<IDeviceConnectionView> _deviceConnectionViews;
+        private readonly List<IIoView> _inputViews;
+        private readonly List<IIoView> _outputViews;
+        public IReadOnlyList<IDeviceConnectionView> DeviceConnectionViews { get => _deviceConnectionViews; }
+        public IReadOnlyList<IIoView> InputViews { get => _inputViews; }
+        public IReadOnlyList<IIoView> OutputViews { get => OutputViews; }
 
         public Form3()
         {
             InitializeComponent();
-            DeviceConnectionViews = new List<IDeviceConnectionView>();
-            InputViews = new List<IIoView>();
-            OutputViews = new List<IIoView>();
-        }
-
-        public void SetPresenter(DevicePresenter presenter)
-        {
-            _devicePresenter = presenter;
+            _deviceConnectionViews = new List<IDeviceConnectionView>();
+            _inputViews = new List<IIoView>();
+            _outputViews = new List<IIoView>();
         }
 
         // Presenter 呼叫這個來建立 UI
@@ -36,7 +33,7 @@ namespace SBC_2D.Views
         {
             var control = new DeviceConnectionControl();
             flowLayoutPanelDeviceConnections.Controls.Add(control);
-            DeviceConnectionViews.Add(control);
+            _deviceConnectionViews.Add(control);
             return control;
         }
 
@@ -44,7 +41,7 @@ namespace SBC_2D.Views
         {
             var control = new IoControl(false, number);
             flowLayoutPanelDis.Controls.Add(control);
-            InputViews.Add(control);
+            _inputViews.Add(control);
             return control;
         }
 
@@ -52,59 +49,11 @@ namespace SBC_2D.Views
         {
             var control = new IoControl(true, number);
             flowLayoutPanelDos.Controls.Add(control);
-            OutputViews.Add(control);
+            _outputViews.Add(control);
             return control;
         }
     }
 }
-
-
-/* Device list for user setting */
-//public void BindDeviceListVm(DeviceConnectionListVm vm)
-//{
-//    _deviceConnectionControls = new Dictionary<DeviceName, DeviceConnectionControl>();
-//    flowLayoutPanelDeviceConnections.Controls.Clear();
-//    foreach (DeviceConnectionVm rowVm in vm.RowVms)
-//    {
-//        int yPosition = 300;
-//        DeviceConnectionControl control = new DeviceConnectionControl();
-//        control.Location = new Point(10, yPosition);
-//        flowLayoutPanelDeviceConnections.Controls.Add(control);
-//        DeviceName name = rowVm.DeviceName;
-//        control.BindVm(rowVm);
-//        control.ConnectClicked += (s, e) => OnConnectClick(name, e);
-//        control.IpChanged += (s, ip) => OnIpChanged(name, ip);
-//        control.PortChanged += (s, port) => OnPortChanged(name, port);
-//        _deviceConnectionControls[name] = control;
-//        yPosition += control.Height + 5;
-//    }
-//}
-
-///* System i/o */
-//public void BindSystemIoListVm(SystemIoListVm vm)
-//{
-//    _disControls = new Dictionary<string, IoLayout>();
-//    flowLayoutPanelDis.Controls.Clear();
-//    foreach (SystemIoVm diVm in vm.DiVms)
-//    {
-//        IoLayout control = new IoLayout(false);
-//        flowLayoutPanelDis.Controls.Add(control);
-//        control.BindVm(diVm);
-//        string id = $"{diVm.Prefix}{diVm.Number}";
-//        _disControls[id] = control;
-//    }
-//    _dosControls = new Dictionary<string, IoLayout>();
-//    flowLayoutPanelDos.Controls.Clear();
-//    foreach (SystemIoVm doVm in vm.DoVms)
-//    {
-//        IoLayout control = new IoLayout(true);
-//        flowLayoutPanelDos.Controls.Add(control);
-//        control.BindVm(doVm);
-//        control.OutputClicked += Control_OutputClicked;
-//        string id = $"{doVm.Prefix}{doVm.Number}";
-//        _dosControls[id] = control;
-//    }
-//}
 
 //protected override void OnResizeBegin(EventArgs e)
 //{

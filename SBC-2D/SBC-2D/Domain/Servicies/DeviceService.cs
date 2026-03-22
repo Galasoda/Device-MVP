@@ -1,6 +1,5 @@
 ﻿using SBC_2D.Infrastructures.Device;
 using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Infrastructures.Logger;
 using SBC_2D.Shared;
 using SBC_2D.Views.UserControls;
 using System;
@@ -14,49 +13,93 @@ namespace SBC_2D.Domain.Servicies
 {
     public class DeviceService
     {
+        private readonly IniService _iniService;
         private readonly DeviceManager _manager;
         private readonly DevicesStore _store;
-        private readonly IniService _iniService;
+        private readonly DeviceConfig _deviceConfig;
 
         public DeviceService(DeviceManager manager, DevicesStore store, IniService iniService)
         {
             _store = store;
             _manager = manager;
             _iniService = iniService;
+            _deviceConfig = _iniService.GetDeviceConfig();
+        }
+
+        public IReadOnlyList<IDevice> CreateDevices()
+        {
+            List<IDevice> devices = new List<IDevice>();
+            foreach (var config in _deviceConfig.SocketConfigs)
+            {
+                bool isExist = DeviceFactory.BuildMapping.TryGetValue(config.Key, out Func<IDevice> build);
+                if (!isExist)
+                    continue;
+                IDevice device = build();
+                devices.Add(device);
+            }
+            _store.Devices.Clear();
+            _store.Devices = devices;
+            return devices;
+        }
+
+        public List<IoDeviceContext> CreateIoDeviceContexts()
+        {
+            List<IoDeviceContext> ioDeviceContext = new List<IoDeviceContext>();
+            IEnumerable<IIoDevice> ioDevices = _store.Devices.OfType<IIoDevice>();
+
+            int systemDiIndex = 0;
+            int systemDoIndex = 0;
+            foreach (IIoDevice device in ioDevices)
+            {
+                IoState ioState = new IoState(device.DiCount, device.DoCount);
+                IoDeviceContext ioInstance = new IoDeviceContext(
+                    device,
+                    systemDiIndex,
+                    systemDoIndex,
+                    ioState
+                );
+                systemDiIndex += device.DiCount;
+                systemDoIndex += device.DoCount;
+                ioDeviceContext.Add(ioInstance);
+            }
+            _store.IoDeviceContext.Clear();
+            _store.IoDeviceContext = ioDeviceContext;
+            //Log: $"Created {_deviceStore.Devices.Count} {nameof(IoDeviceContext)}."
+            return ioDeviceContext;
         }
 
         public async Task<int> ConnectAllAsync() 
             => await _manager.ConnectAllAsync();
 
-        public async Task<bool> ConnectAsync(string name)
+        public async Task<bool> ConnectAsync(string name, SocketConfig config)
         {
-            if(!_store.TryGetConnectableDevice(name, out IConnectableDevice device))
+            if(!_store.TryGetConnectableDevice(name, out var device))
                 return false;
-            return await _manager.ConnectAsync(device);
+            if(!_deviceConfig.SocketConfigs.TryGetValue(name, out var cfg))
+                return false;
+            cfg = config;
+            bool isConnected = await _manager.ConnectAsync(device, cfg);
+            if (isConnected)
+                _iniService.SaveSetupSectoinIpPort(name, cfg.Address, cfg.Port.ToString());
+            return isConnected;
         }
 
         public void StartPollingAllDeviceConnection()
         {
             if (_manager.IsStartedUpdatingStatus)
             {
-                LoggerStore.RecordSystem(LogType.Info, $"It's already start polling all devices connection.");
                 return;
             }
             Task task = _manager.StartPollingAllDeviceConnection();
-            if (task.Exception == null)
-                LoggerStore.RecordSystem(LogType.Info, $"Started polling all devices connection.");
         }
 
         public void StartUpdatingAllDeviceDio()
         {
             if (_manager.IsStartedUpdatingDios)
             {
-                LoggerStore.RecordSystem(LogType.Info, $"It's already start updating all device dio.");
                 return;
             }
             Task task = _manager.StartUpdatingDios();
-            if (task.Exception == null)
-                LoggerStore.RecordSystem(LogType.Info, $"Started updating all device dio.");
         }
 
         public void InverseDo(int systemIndex)
@@ -64,15 +107,10 @@ namespace SBC_2D.Domain.Servicies
             bool isInversed = _manager.InverseDo(systemIndex, out bool isOn);
             string triedMsg = isInversed ? "success" : "failed";
             string statusMsg = isOn ? "on" : "off";
-            LoggerStore.RecordSystem(LogType.Info, $"User control output {systemIndex} {triedMsg}. Now output is {statusMsg}");
         }
 
 
         /* Helper Model Layer*/
-        public IReadOnlyList<IoDeviceContext> CreateIoDeviceContexts()
-            => _manager.CreateIoDeviceContexts();
-        public IReadOnlyList<IDevice> CreateDevices()
-            => _manager.CreateDevices();
         public IReadOnlyList<IDevice> GetDevices()
             => _store.Devices.AsReadOnly();
         public IDevice GetDevice(string name)
@@ -83,5 +121,7 @@ namespace SBC_2D.Domain.Servicies
             => _store.Devices.Select(d => d.Name).ToList().AsReadOnly();
         public IReadOnlyList<IoDeviceContext> GetIoDeviceContexts()
             => _store.IoDeviceContext.AsReadOnly();
+        //public KeyValuePair<string, SocketConfig> GetSocketConfig(string name)
+        //    => _iniService.GetSocketConfig(name);
     }
 }

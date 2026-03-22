@@ -18,21 +18,16 @@ namespace SBC_2D.Presenters
     {
         private readonly IDeviceConnectionView _view;
         private readonly DeviceService _deviceService;
-        private readonly IniService _iniService;
         private IConnectableDevice _device;
         private string _name = string.Empty;
         private SocketConfig _socketConfig;
 
-        public DeviceConnectionPresenter(IDeviceConnectionView view, DeviceService deviceService, IniService iniService, string name)
+        public DeviceConnectionPresenter(IDeviceConnectionView view, DeviceService deviceService, string name, SocketConfig config)
         {
-            if (deviceService == null)
-                throw new ArgumentNullException(nameof(deviceService));
-            if (view == null)
-                throw new ArgumentNullException(nameof(view));
             _view = view;
             _deviceService = deviceService;
-            _iniService = iniService;
             _name = name;
+            _socketConfig = config;
         }
 
         public void Initialize()
@@ -40,7 +35,6 @@ namespace SBC_2D.Presenters
             _view.IpChanged += View_IpChanged;
             _view.PortChanged += View_PortChanged;
             _view.RequestConnection += View_RquestedConnection;
-            _socketConfig = _iniService.GetSocketConfig(_name).Value;
             _view.SetName(_name);
             _view.SetIp(_socketConfig.Address);
             _view.SetPort(_socketConfig.Port > -1 ? _socketConfig.Port.ToString() : "");
@@ -65,11 +59,7 @@ namespace SBC_2D.Presenters
 
         private async void View_RquestedConnection(object sender, EndPointArgs e)
         {
-            bool isConnected = await TriggerConnectAsync();
-            if (isConnected)
-                _iniService.SaveSetupSectoinIpPort(_name,
-                    _socketConfig.Address,
-                    _socketConfig.Port.ToString());
+            await TriggerConnectAsync();
         }
 
         private void Device_ConnectionChanged(string name, bool isConnected)
@@ -82,7 +72,7 @@ namespace SBC_2D.Presenters
         public async Task<bool> TriggerConnectAsync()
         {
             _view.SetConnecting(true);
-            bool isConnected = await _deviceService.ConnectAsync(_name);
+            bool isConnected = await _deviceService.ConnectAsync(_name, _socketConfig);
             _view.SetConnecting(false);
             _view.SetConnected(isConnected);
             return isConnected;

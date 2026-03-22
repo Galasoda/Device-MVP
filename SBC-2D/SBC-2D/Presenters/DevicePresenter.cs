@@ -39,8 +39,12 @@ namespace SBC_2D.Presenters
             _deviceService.CreateIoDeviceContexts();
             foreach (IDevice device in _deviceService.GetDevices())
             {
+                string name = device.Name;
                 var view = _form3View.AddDeviceConnectionView();
-                var presenter = new DeviceConnectionPresenter(view, _deviceService, _iniService, device.Name);
+                var config = _iniService.GetSocketConfig(name);
+                if (config.Value == default)
+                    config = new KeyValuePair<string, SocketConfig>(name, new SocketConfig("", -1));
+                var presenter = new DeviceConnectionPresenter(view, _deviceService, config.Key, config.Value);
                 _deviceConnectionPresenters.Add(presenter);
                 presenter.Initialize();
             }
@@ -100,11 +104,8 @@ namespace SBC_2D.Presenters
 
         public async Task ConnectAll()
         {
-            foreach (var v in _form3View.DeviceConnectionViews)
-                v.SetConnecting(true);
-            await _deviceService.ConnectAllAsync();
-            foreach (var v in _form3View.DeviceConnectionViews)
-                v.SetConnecting(false);
+            foreach (var p in _deviceConnectionPresenters)
+                await p.TriggerConnectAsync();
         }
 
         public void StartPollingAllDeviceConnection()
@@ -117,83 +118,5 @@ namespace SBC_2D.Presenters
             _deviceService.StartUpdatingAllDeviceDio();
         }
 
-        //public async Task<int> ConnectAll()
-        //{
-        //    int numConnected = 0;
-        //    List<Task> tasks = new List<Task>();
-        //    foreach (var p in _deviceConnectionPresenters)
-        //    {
-        //        tasks.Add(p.TriggConnectAsync());
-        //    }
-        //    await Task.WhenAll(tasks);
-        //    return numConnected;
-        //}
     }
 }
-
-//public void Initialize(IEnumerable<IoInstance> instances)
-//{
-//    _diVms.Clear();
-//    _doVms.Clear();
-//    foreach (IoInstance instance in instances)
-//    {
-//        for (int i = 0; i < instance.Device.DiCount; i++)
-//        {
-//            SystemIoVm diVm = new SystemIoVm()
-//            {
-//                IsOn = instance.State.Dis[i],
-//                Prefix = "X",
-//                Number = instance.DiMap[i],
-//                Description = $"{"X"}{instance.DiMap[i]}用ini設定"
-//            };
-//            _diVms.Add(diVm);
-//        }
-//        for (int i = 0; i < instance.Device.DoCount; i++)
-//        {
-//            SystemIoVm doVm = new SystemIoVm()
-//            {
-//                IsOn = instance.State.Dos[i],
-//                Prefix = "Y",
-//                Number = instance.DoMap[i],
-//                Description = $"{"Y"}{instance.DoMap[i]}用ini設定"
-//            };
-//            _doVms.Add(doVm);
-//        }
-//    }
-//    OnPropertyChanged(nameof(DiVms));
-//    OnPropertyChanged(nameof(DoVms));
-//}
-
-//public SystemIoVm GetDiVm(int number)
-//{
-//    return _diVms.FirstOrDefault(vm => vm.Number == number);
-//}
-
-//public SystemIoVm GetDoVm(int number)
-//{
-//    return _doVms.FirstOrDefault(vm => vm.Number == number);
-//}
-
-//public void UpdateDiStatus(Dictionary<int, bool> status)
-//{
-//    foreach (KeyValuePair<int, bool> kvp in status)
-//    {
-//        SystemIoVm diVm = GetDiVm(kvp.Key);
-//        if (diVm != null)
-//        {
-//            diVm.IsOn = kvp.Value;
-//        }
-//    }
-//}
-
-//public void UpdateDoStatus(Dictionary<int, bool> status)
-//{
-//    foreach (KeyValuePair<int, bool> kvp in status)
-//    {
-//        SystemIoVm doVm = GetDoVm(kvp.Key);
-//        if (doVm != null)
-//        {
-//            doVm.IsOn = kvp.Value;
-//        }
-//    }
-//}

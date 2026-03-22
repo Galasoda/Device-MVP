@@ -1,5 +1,4 @@
 ﻿using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Infrastructures.Logger;
 using SBC_2D.Shared;
 using System;
 using System.Collections.Generic;
@@ -12,8 +11,8 @@ namespace SBC_2D.Infrastructures.Device
 {
     public class DeviceManager
     {
-        private IniStore _iniStore;
         private DevicesStore _deviceStore;
+        private DeviceConfig _deviceConfig;
         private SemaphoreSlim _connectLimit;
         private SemaphoreSlim _checkStatusLimit;
         private Task _updateDiosTask;
@@ -23,81 +22,39 @@ namespace SBC_2D.Infrastructures.Device
         public bool IsStartedUpdatingStatus { get => _ctsKeepUpdateStatus != null && !_ctsKeepUpdateStatus.IsCancellationRequested; }
         public bool IsStartedUpdatingDios { get => _ctsKeepUpdateDios != null && !_ctsKeepUpdateDios.IsCancellationRequested; }
 
-        public DeviceManager(DevicesStore devicesStore, IniStore iniStore)
+        public DeviceManager(DevicesStore devicesStore, DeviceConfig deviceConfig)
         {
             _deviceStore = devicesStore;
+            _deviceConfig = deviceConfig;
             _connectLimit = new SemaphoreSlim(3);
             _checkStatusLimit = new SemaphoreSlim(5);
-            _iniStore = iniStore;
-        }
-
-        public IReadOnlyList<IDevice> CreateDevices()
-        {
-            List<IDevice> devices = new List<IDevice>();
-            foreach (var config in _iniStore.Setup.DeviceConfig.SocketConfigs)
-            {
-                bool isExist = DeviceFactory.BuildMapping.TryGetValue(config.Key, out Func<IDevice> build);
-                if (!isExist)
-                    continue;
-                IDevice device = build();
-                devices.Add(device);
-            }
-            _deviceStore.Devices.Clear();
-            _deviceStore.Devices = devices;
-            return devices;
-        }
-
-        public List<IoDeviceContext> CreateIoDeviceContexts()
-        {
-            List<IoDeviceContext> ioDeviceContext = new List<IoDeviceContext>();
-            IEnumerable<IIoDevice> ioDevices = _deviceStore.Devices.OfType<IIoDevice>();
-
-            int systemDiIndex = 0;
-            int systemDoIndex = 0;
-            foreach (IIoDevice device in ioDevices)
-            {
-                IoState ioState = new IoState(device.DiCount, device.DoCount);
-                IoDeviceContext ioInstance = new IoDeviceContext(
-                    device,
-                    systemDiIndex,
-                    systemDoIndex,
-                    ioState
-                );
-                systemDiIndex += device.DiCount;
-                systemDoIndex += device.DoCount;
-                ioDeviceContext.Add(ioInstance);
-            }
-            _deviceStore.IoDeviceContext.Clear();
-            _deviceStore.IoDeviceContext = ioDeviceContext;
-            //Log: $"Created {_deviceStore.Devices.Count} {nameof(IoDeviceContext)}."
-            return ioDeviceContext;
         }
 
         /* Connection */
         public async Task<int> ConnectAllAsync()
         {
             List<Task<bool>> tasks = new List<Task<bool>>();
-            foreach (var device in _deviceStore.Devices.OfType<IConnectableDevice>())
+            var devices = _deviceStore.Devices.OfType<IConnectableDevice>();
+            foreach (var device in devices)
             {
-                tasks.Add(ConnectAsync(device));
+                string name = device.Name;
+                if (!_deviceConfig.SocketConfigs.TryGetValue(name, out var config))
+                    continue;
+                tasks.Add(ConnectAsync(device, config));
             }
             bool[] results = await Task.WhenAll(tasks);
             //Log: Connected {count} out of {_deviceStore.Devices.count} devices
             return results.Count(b => b);
         }
 
-        public async Task<bool> ConnectAsync(IConnectableDevice device)
+        public async Task<bool> ConnectAsync(IConnectableDevice device, IConnectionConfig config)
         {
-            _iniStore.TryGetSocketConfig(device.Name, out var config);
-            if (config == null)
-                return false;
-
             await _connectLimit.WaitAsync();
             try
             {
                 return await Task.Run(() => device.Connect(config));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 //LOG
                 return false;
@@ -111,10 +68,7 @@ namespace SBC_2D.Infrastructures.Device
         public async Task<bool> CheckConnection(string name)
         {
             if (!_deviceStore.TryGetConnectableDevice(name, out IConnectableDevice device))
-            {
-                LoggerStore.RecordCodeTrace(LogType.Info, $"Device {name} can't be able connect, because it's not found.");
                 return false;
-            }
             return device.CheckConnection();
         }
 
@@ -138,7 +92,6 @@ namespace SBC_2D.Infrastructures.Device
                                 }
                                 catch (Exception ex)
                                 {
-                                    LoggerStore.RecordCodeTrace(LogType.Warn, $"Device {device.Name} CheckConnection failed: {ex.Message}");
                                 }
                             }));
 
@@ -149,8 +102,6 @@ namespace SBC_2D.Infrastructures.Device
                 }
                 catch (OperationCanceledException)
                 {
-                    LoggerStore.RecordSystem(LogType.Info, "Stopped checking connection.");
-                    LoggerStore.RecordCodeTrace(LogType.Debug, $"Stopped checking connection.");
                 }
             });
             return _updateStatusTask;
@@ -160,11 +111,9 @@ namespace SBC_2D.Infrastructures.Device
         {
             if (_ctsKeepUpdateStatus == null)
             {
-                LoggerStore.RecordSystem(LogType.Debug, "StopUpdatingConnectionStatus skipped: CTS is null.");
                 return;
             }
 
-            LoggerStore.RecordSystem(LogType.Info, "Stopping connection status update task...");
             _ctsKeepUpdateStatus.Cancel();
 
             try
@@ -174,22 +123,18 @@ namespace SBC_2D.Infrastructures.Device
                     await _updateStatusTask;
                 }
 
-                LoggerStore.RecordSystem(LogType.Info, "Connection status update task stopped successfully.");
             }
             catch (TaskCanceledException)
             {
-                LoggerStore.RecordSystem(LogType.Info, "Connection status update task was canceled.");
             }
             catch (Exception ex)
             {
-                LoggerStore.RecordSystem(LogType.Error, $"Error while stopping connection status task: {ex}");
             }
             finally
             {
                 _ctsKeepUpdateStatus.Dispose();
                 _ctsKeepUpdateStatus = null;
                 _updateStatusTask = null;
-                LoggerStore.RecordCodeTrace(LogType.Debug, "StopUpdatingConnectionStatus cleanup completed.");
             }
         }
 
@@ -212,7 +157,6 @@ namespace SBC_2D.Infrastructures.Device
                             }
                             catch (Exception ex)
                             {
-                                LoggerStore.RecordCodeTrace(LogType.Warn, $"Device {ctx.Device.Name} CheckConnection failed: {ex.Message}");
                             }
                         }));
 
@@ -222,13 +166,9 @@ namespace SBC_2D.Infrastructures.Device
                 }
                 catch (OperationCanceledException)
                 {
-                    LoggerStore.RecordSystem(LogType.Info, "DIO update stopped.");
-                    LoggerStore.RecordCodeTrace(LogType.Debug, $"DIO update stopped");
                 }
                 catch (Exception ex)
                 {
-                    LoggerStore.RecordSystem(LogType.Error, "DIO update failed.");
-                    LoggerStore.RecordCodeTrace(LogType.Debug, $"Exception: {ex.Message}");
                 }
             });
 

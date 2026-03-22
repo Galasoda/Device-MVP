@@ -25,10 +25,10 @@ namespace SBC_2D
             Application.SetCompatibleTextRenderingDefault(false);
             IniStore iniStore = new IniStore();
             IniService iniService = new IniService(iniStore);
-            iniService.GetSetup();
+            Setup setup = iniService.GetSetup();
 
             DevicesStore devicesStore = new DevicesStore();
-            DeviceManager deviceManager = new DeviceManager(devicesStore, iniStore);
+            DeviceManager deviceManager = new DeviceManager(devicesStore, setup.DeviceConfig);
             DeviceService deviceService = new DeviceService(deviceManager, devicesStore, iniService);
 
             Form3 form3 = new Form3();
