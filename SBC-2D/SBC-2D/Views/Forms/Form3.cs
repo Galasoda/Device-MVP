@@ -52,6 +52,16 @@ namespace SBC_2D.Views
             _outputViews.Add(control);
             return control;
         }
+
+        public void ClearInputView()
+        {
+            _inputViews.Clear();
+        }
+
+        public void ClearOutputView()
+        {
+            _outputViews.Clear();
+        }
     }
 }
 

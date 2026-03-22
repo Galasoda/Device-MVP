@@ -33,6 +33,9 @@ namespace SBC_2D.Presenters
             _iniService = iniService;
         }
 
+        //建議還是要分deviceConnectionlistview、iolistview
+        //再加個barcodereaderCommand mvp
+        //再加個laserthicknessSensor mvp
         public void Initialize()
         {
             _deviceService.CreateDevices();
@@ -51,6 +54,8 @@ namespace SBC_2D.Presenters
             foreach (IoDeviceContext context in _deviceService.GetIoDeviceContexts())
             {
                 _ioDeviceContexts.Add(context);
+                _form3View.ClearInputView();
+                _diViewMap.Clear();
                 for (int i = 0; i < context.Device.DiCount; i++)
                 {
                     int systemDiNumber = context.ToSystemDi(i);
@@ -62,6 +67,8 @@ namespace SBC_2D.Presenters
                 }
                 context.SystemDisUpdated -= Context_SystemDisUpdated;
                 context.SystemDisUpdated += Context_SystemDisUpdated;
+                _form3View.ClearOutputView();
+                _doViewMap.Clear();
                 for (int i = 0; i < context.Device.DoCount; i++)
                 {
                     int systemDoNumber = context.ToSystemDo(i);

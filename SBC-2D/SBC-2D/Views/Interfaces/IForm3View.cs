@@ -16,5 +16,7 @@ namespace SBC_2D.Views.Interfaces
         IDeviceConnectionView AddDeviceConnectionView();
         IIoView AddInputView(int number);
         IOutView AddOutputView(int number);
+        void ClearInputView();
+        void ClearOutputView();
     }
 }

@@ -38,7 +38,7 @@ namespace SBC_2D.Domain.Servicies
                 devices.Add(device);
             }
             _store.Devices.Clear();
-            _store.Devices = devices;
+            _store.Devices.AddRange(devices);
             return devices;
         }
 
@@ -63,7 +63,7 @@ namespace SBC_2D.Domain.Servicies
                 ioDeviceContext.Add(ioInstance);
             }
             _store.IoDeviceContext.Clear();
-            _store.IoDeviceContext = ioDeviceContext;
+            _store.IoDeviceContext.AddRange(ioDeviceContext);
             //Log: $"Created {_deviceStore.Devices.Count} {nameof(IoDeviceContext)}."
             return ioDeviceContext;
         }

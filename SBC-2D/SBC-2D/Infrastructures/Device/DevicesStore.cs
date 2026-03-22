@@ -8,8 +8,8 @@ namespace SBC_2D.Infrastructures.Device
 {
     public class DevicesStore
     {
-        public List<IDevice> Devices { get; set; }
-        public List<IoDeviceContext> IoDeviceContext { get; set; }
+        public List<IDevice> Devices { get; }
+        public List<IoDeviceContext> IoDeviceContext { get; }
 
         public DevicesStore()
         {

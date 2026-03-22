@@ -20,6 +20,7 @@ namespace SBC_2D.Infrastructures.Device
                 { DeviceNames.IoModule2, () => new Adam6052(DeviceNames.IoModule2) },
                 { DeviceNames.UpperBarcodeReader, () => new KeyenceBarcodeReader(DeviceNames.UpperBarcodeReader) },
                 { DeviceNames.LowerBarcodeReader, () => new KeyenceBarcodeReader(DeviceNames.LowerBarcodeReader) },
+                { DeviceNames.LaserDisplacementSensor, () => new KeyenceBarcodeReader(DeviceNames.LaserDisplacementSensor) },
             };
         }
 
