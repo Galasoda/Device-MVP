@@ -1,5 +1,4 @@
-﻿using SBC_2D.Shared;
-using System;
+﻿using System;
 
 namespace SBC_2D.Infrastructures.Device
 {

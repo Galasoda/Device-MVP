@@ -1,10 +1,8 @@
-﻿using SBC_2D.ViewModels;
-using SBC_2D.Views.UserControls;
+﻿using SBC_2D.Views.UserControls;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using SBC_2D.Shared;
 using SBC_2D.Presenters;
 using SBC_2D.Views.Interfaces;
 using System.Linq;

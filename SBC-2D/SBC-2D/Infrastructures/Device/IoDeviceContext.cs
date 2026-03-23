@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SBC_2D.Infrastructures.Device
 {
@@ -10,6 +12,9 @@ namespace SBC_2D.Infrastructures.Device
         public int DoStart { get; }
         public IoState State { get; }
 
+        private Task _updateDiosTask;
+        private CancellationTokenSource _ctsKeepUpdateDios;
+        public bool IsStartedUpdatingDios { get => _ctsKeepUpdateDios != null && !_ctsKeepUpdateDios.IsCancellationRequested; }
         public event Action<IReadOnlyDictionary<int, bool>> SystemDisUpdated;
         public event Action<IReadOnlyDictionary<int, bool>> SystemDosUpdated;
 
@@ -21,24 +26,76 @@ namespace SBC_2D.Infrastructures.Device
             State = state;
         }
 
-        public void UpdateDis()
+        public Task StartUpdatingDios()
         {
-            Device.ReadAllDi(out bool[] dis);
-            State.UpdateDis(dis);
-            var systemDis = new Dictionary<int, bool>(dis.Length);
-            for (int i = 0; i < dis.Length; i++)
-                systemDis[ToSystemDi(i)] = dis[i];
-            SystemDisUpdated?.Invoke(systemDis);
+            _ctsKeepUpdateDios = new CancellationTokenSource();
+            _updateDiosTask = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!_ctsKeepUpdateDios.Token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            Device.ReadAllDi(out bool[] dis);
+                            State.UpdateDis(dis);
+                            var systemDis = new Dictionary<int, bool>(dis.Length);
+                            for (int i = 0; i < dis.Length; i++)
+                                systemDis[ToSystemDi(i)] = dis[i];
+                            SystemDisUpdated?.Invoke(systemDis);
+
+                            Device.ReadAllDo(out bool[] dos);
+                            State.UpdateDos(dos);
+                            var systemDos = new Dictionary<int, bool>(dos.Length);
+                            for (int i = 0; i < dos.Length; i++)
+                                systemDos[ToSystemDo(i)] = dos[i];
+                            SystemDosUpdated?.Invoke(systemDos);
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+                        await Task.Delay(100, _ctsKeepUpdateDios.Token);
+                    }
+                }
+                catch (TaskCanceledException)
+                {
+                    //是否有cancelrequest?
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (Exception ex)
+                {
+                }
+            });
+
+            return _updateDiosTask;
         }
 
-        public void UpdateDos()
+        public async Task StopUpdatingDios()
         {
-            Device.ReadAllDo(out bool[] dos);
-            State.UpdateDos(dos);
-            var systemDos = new Dictionary<int, bool>(dos.Length);
-            for (int i = 0; i < dos.Length; i++)
-                systemDos[ToSystemDo(i)] = dos[i];
-            SystemDosUpdated?.Invoke(systemDos);
+            if (_ctsKeepUpdateDios == null)
+                return;
+
+            //請求停止而已
+            _ctsKeepUpdateDios.Cancel();
+
+            //還是要等待task完成最後一次
+            try
+            {
+                if (_ctsKeepUpdateDios != null)
+                    await _updateDiosTask;
+            }
+            catch (TaskCanceledException)
+            {
+                // 忽略，代表正常停止
+            }
+            finally
+            {
+                _ctsKeepUpdateDios.Dispose();
+                _ctsKeepUpdateDios = null;
+                _updateDiosTask = null;
+            }
         }
 
         // 裝置 index → 系統 index

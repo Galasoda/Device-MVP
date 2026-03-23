@@ -3,7 +3,6 @@ using SBC_2D.Domain.Servicies;
 using SBC_2D.Infrastructures.Device;
 using SBC_2D.Infrastructures.Ini;
 using SBC_2D.Presenters;
-using SBC_2D.ViewModels;
 using SBC_2D.Views;
 using System;
 using System.Windows.Forms;
@@ -28,13 +27,15 @@ namespace SBC_2D
             Setup setup = iniService.GetSetup();
 
             DevicesStore devicesStore = new DevicesStore();
-            DeviceManager deviceManager = new DeviceManager(devicesStore, setup.DeviceConfig);
+            DeviceManager deviceManager = new DeviceManager();
+            deviceManager.Initialize(devicesStore, setup.DeviceConfig);
             DeviceService deviceService = new DeviceService(deviceManager, devicesStore, iniService);
 
             Form3 form3 = new Form3();
             FormMain formMain = new FormMain(form3);
             DevicePresenter devicePresenter = new DevicePresenter(form3, deviceService, iniService);
-            formMain.SetPresenters(devicePresenter);
+            FormMainPresenter formMainPresenter = new FormMainPresenter(formMain, devicePresenter);
+            formMainPresenter.Initialize();
 
             Application.Run(formMain);
         }

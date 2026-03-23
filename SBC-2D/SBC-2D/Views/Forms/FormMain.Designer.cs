@@ -82,7 +82,7 @@
             this.buttonForm4.TabIndex = 3;
             this.buttonForm4.Text = "資訊";
             this.buttonForm4.UseVisualStyleBackColor = true;
-            this.buttonForm4.Click += new System.EventHandler(this.ButtonSwitchPage_Click);
+            this.buttonForm4.Click += new System.EventHandler(this.ButtonNavigate_Click);
             // 
             // buttonForm1
             // 
@@ -95,7 +95,7 @@
             this.buttonForm1.TabIndex = 0;
             this.buttonForm1.Text = "主頁";
             this.buttonForm1.UseVisualStyleBackColor = true;
-            this.buttonForm1.Click += new System.EventHandler(this.ButtonSwitchPage_Click);
+            this.buttonForm1.Click += new System.EventHandler(this.ButtonNavigate_Click);
             // 
             // buttonForm3
             // 
@@ -108,7 +108,7 @@
             this.buttonForm3.TabIndex = 2;
             this.buttonForm3.Text = "硬體";
             this.buttonForm3.UseVisualStyleBackColor = true;
-            this.buttonForm3.Click += new System.EventHandler(this.ButtonSwitchPage_Click);
+            this.buttonForm3.Click += new System.EventHandler(this.ButtonNavigate_Click);
             // 
             // buttonForm2
             // 
@@ -121,7 +121,7 @@
             this.buttonForm2.TabIndex = 1;
             this.buttonForm2.Text = "參數";
             this.buttonForm2.UseVisualStyleBackColor = true;
-            this.buttonForm2.Click += new System.EventHandler(this.ButtonSwitchPage_Click);
+            this.buttonForm2.Click += new System.EventHandler(this.ButtonNavigate_Click);
             // 
             // panelPage
             // 
@@ -170,7 +170,7 @@
             this.label333.Location = new System.Drawing.Point(4, 4);
             this.label333.Margin = new System.Windows.Forms.Padding(4);
             this.label333.Name = "label333";
-            this.label333.Size = new System.Drawing.Size(71, 16);
+            this.label333.Size = new System.Drawing.Size(72, 16);
             this.label333.TabIndex = 16;
             this.label333.Text = "設備狀態";
             // 
@@ -185,7 +185,7 @@
             this.labelStatus.Location = new System.Drawing.Point(4, 28);
             this.labelStatus.Margin = new System.Windows.Forms.Padding(4);
             this.labelStatus.Name = "labelStatus";
-            this.labelStatus.Size = new System.Drawing.Size(71, 16);
+            this.labelStatus.Size = new System.Drawing.Size(72, 16);
             this.labelStatus.TabIndex = 17;
             this.labelStatus.Text = "123";
             // 
@@ -213,7 +213,7 @@
             this.label222.Location = new System.Drawing.Point(4, 4);
             this.label222.Margin = new System.Windows.Forms.Padding(4);
             this.label222.Name = "label222";
-            this.label222.Size = new System.Drawing.Size(71, 16);
+            this.label222.Size = new System.Drawing.Size(72, 16);
             this.label222.TabIndex = 16;
             this.label222.Text = "模組名稱";
             // 
@@ -228,7 +228,7 @@
             this.labelModelName.Location = new System.Drawing.Point(4, 28);
             this.labelModelName.Margin = new System.Windows.Forms.Padding(4);
             this.labelModelName.Name = "labelModelName";
-            this.labelModelName.Size = new System.Drawing.Size(71, 16);
+            this.labelModelName.Size = new System.Drawing.Size(72, 16);
             this.labelModelName.TabIndex = 17;
             this.labelModelName.Text = "3221";
             // 
@@ -271,7 +271,7 @@
             this.label111.Location = new System.Drawing.Point(4, 4);
             this.label111.Margin = new System.Windows.Forms.Padding(4);
             this.label111.Name = "label111";
-            this.label111.Size = new System.Drawing.Size(71, 16);
+            this.label111.Size = new System.Drawing.Size(72, 16);
             this.label111.TabIndex = 16;
             this.label111.Text = "SBC-2D";
             // 
@@ -286,7 +286,7 @@
             this.labelVersion.Location = new System.Drawing.Point(4, 28);
             this.labelVersion.Margin = new System.Windows.Forms.Padding(4);
             this.labelVersion.Name = "labelVersion";
-            this.labelVersion.Size = new System.Drawing.Size(71, 16);
+            this.labelVersion.Size = new System.Drawing.Size(72, 16);
             this.labelVersion.TabIndex = 17;
             this.labelVersion.Text = "20251210";
             // 
@@ -314,7 +314,7 @@
             this.label444.Location = new System.Drawing.Point(4, 4);
             this.label444.Margin = new System.Windows.Forms.Padding(4);
             this.label444.Name = "label444";
-            this.label444.Size = new System.Drawing.Size(55, 16);
+            this.label444.Size = new System.Drawing.Size(56, 16);
             this.label444.TabIndex = 16;
             this.label444.Text = "使用者";
             // 
@@ -329,7 +329,7 @@
             this.labelUserRole.Location = new System.Drawing.Point(4, 28);
             this.labelUserRole.Margin = new System.Windows.Forms.Padding(4);
             this.labelUserRole.Name = "labelUserRole";
-            this.labelUserRole.Size = new System.Drawing.Size(55, 16);
+            this.labelUserRole.Size = new System.Drawing.Size(56, 16);
             this.labelUserRole.TabIndex = 17;
             this.labelUserRole.Text = "123";
             // 
@@ -375,7 +375,6 @@
             this.Name = "FormMain";
             this.Text = "FormMain";
             this.Load += new System.EventHandler(this.FormMain_Load);
-            this.Shown += new System.EventHandler(this.FormMain_Shown);
             this.panelBottombar.ResumeLayout(false);
             this.flowLayoutPanel3.ResumeLayout(false);
             this.flowLayoutPanel3.PerformLayout();

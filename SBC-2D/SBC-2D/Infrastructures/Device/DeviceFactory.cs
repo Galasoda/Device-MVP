@@ -1,5 +1,4 @@
 ﻿using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +26,41 @@ namespace SBC_2D.Infrastructures.Device
         public static List<IDevice> BuildDevices()
         {
             return BuildMapping.Select(kv => kv.Value()).ToList();
+        }
+
+        public static List<IDevice> CreateDevices(DeviceConfig deviceConfig)
+        {
+            List<IDevice> devices = new List<IDevice>();
+            foreach (var config in deviceConfig.SocketConfigs)
+            {
+                bool isExist = BuildMapping.TryGetValue(config.Key, out Func<IDevice> build);
+                if (!isExist)
+                    continue;
+                IDevice device = build();
+                devices.Add(device);
+            }
+            return devices;
+        }
+
+        public static List<IoDeviceContext> CreateIoDeviceContexts(IEnumerable<IIoDevice> ioDevices)
+        {
+            List<IoDeviceContext> ioDeviceContext = new List<IoDeviceContext>();
+            int systemDiIndex = 0;
+            int systemDoIndex = 0;
+            foreach (IIoDevice device in ioDevices)
+            {
+                IoState ioState = new IoState(device.DiCount, device.DoCount);
+                IoDeviceContext ioInstance = new IoDeviceContext(
+                    device,
+                    systemDiIndex,
+                    systemDoIndex,
+                    ioState
+                );
+                systemDiIndex += device.DiCount;
+                systemDoIndex += device.DoCount;
+                ioDeviceContext.Add(ioInstance);
+            }
+            return ioDeviceContext;
         }
     }
 }

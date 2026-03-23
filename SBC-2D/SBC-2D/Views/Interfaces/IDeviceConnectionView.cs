@@ -1,6 +1,5 @@
 ﻿using SBC_2D.Infrastructures.Ini;
 using SBC_2D.Presenters;
-using SBC_2D.Shared;
 using SBC_2D.Views.UserControls;
 using System;
 using System.Collections.Generic;

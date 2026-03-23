@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SBC_2D.Shared;
 using SBC_2D.Infrastructures.Ini;
 
 namespace SBC_2D.Infrastructures.Device

@@ -1,5 +1,4 @@
-﻿using SBC_2D.Shared;
-using SBC_2D.Views.UserControls;
+﻿using SBC_2D.Views.UserControls;
 using System;
 using System.Collections.Generic;
 using System.Linq;

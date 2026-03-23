@@ -1,7 +1,6 @@
 ﻿using SBC_2D.Domain.Servicies;
 using SBC_2D.Infrastructures.Device;
 using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Shared;
 using SBC_2D.Views.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -45,17 +44,19 @@ namespace SBC_2D.Presenters
                 string name = device.Name;
                 var view = _form3View.AddDeviceConnectionView();
                 var config = _iniService.GetSocketConfig(name);
-                if (config.Value == default)
+                if (config.Value == null)
                     config = new KeyValuePair<string, SocketConfig>(name, new SocketConfig("", -1));
                 var presenter = new DeviceConnectionPresenter(view, _deviceService, config.Key, config.Value);
                 _deviceConnectionPresenters.Add(presenter);
                 presenter.Initialize();
             }
+            _form3View.ClearInputView();
+            _diViewMap.Clear();
+            _form3View.ClearOutputView();
+            _doViewMap.Clear();
             foreach (IoDeviceContext context in _deviceService.GetIoDeviceContexts())
             {
                 _ioDeviceContexts.Add(context);
-                _form3View.ClearInputView();
-                _diViewMap.Clear();
                 for (int i = 0; i < context.Device.DiCount; i++)
                 {
                     int systemDiNumber = context.ToSystemDi(i);
@@ -67,8 +68,6 @@ namespace SBC_2D.Presenters
                 }
                 context.SystemDisUpdated -= Context_SystemDisUpdated;
                 context.SystemDisUpdated += Context_SystemDisUpdated;
-                _form3View.ClearOutputView();
-                _doViewMap.Clear();
                 for (int i = 0; i < context.Device.DoCount; i++)
                 {
                     int systemDoNumber = context.ToSystemDo(i);
@@ -109,21 +108,22 @@ namespace SBC_2D.Presenters
             }
         }
 
-        public async Task ConnectAll()
+        public async Task ConnectAllAsync()
         {
             foreach (var p in _deviceConnectionPresenters)
                 await p.TriggerConnectAsync();
         }
 
+
+
         public void StartPollingAllDeviceConnection()
         {
-            _deviceService.StartPollingAllDeviceConnection();
+            _ = _deviceService.StartPollingAllDeviceConnection();
         }
 
         public void StartUpdatingAllDeviceDio()
         {
-            _deviceService.StartUpdatingAllDeviceDio();
+            _ = _deviceService.StartUpdatingAllDeviceDio();
         }
-
     }
 }

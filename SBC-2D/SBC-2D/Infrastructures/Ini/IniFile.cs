@@ -1,6 +1,5 @@
 ﻿using IniParser;
 using IniParser.Model;
-using SBC_2D.Shared;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;

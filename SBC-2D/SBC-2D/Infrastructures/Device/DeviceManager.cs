@@ -1,5 +1,4 @@
 ﻿using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,65 +10,82 @@ namespace SBC_2D.Infrastructures.Device
 {
     public class DeviceManager
     {
-        private DevicesStore _deviceStore;
+        private IReadOnlyList<IDevice> _devices;
+        private IReadOnlyList<IConnectableDevice> _connectableDevices;
+        private IReadOnlyList<IoDeviceContext> _ioDeviceContexts;
         private DeviceConfig _deviceConfig;
         private SemaphoreSlim _connectLimit;
         private SemaphoreSlim _checkStatusLimit;
-        private Task _updateDiosTask;
         private Task _updateStatusTask;
         private CancellationTokenSource _ctsKeepUpdateStatus;
-        private CancellationTokenSource _ctsKeepUpdateDios;
         public bool IsStartedUpdatingStatus { get => _ctsKeepUpdateStatus != null && !_ctsKeepUpdateStatus.IsCancellationRequested; }
-        public bool IsStartedUpdatingDios { get => _ctsKeepUpdateDios != null && !_ctsKeepUpdateDios.IsCancellationRequested; }
 
-        public DeviceManager(DevicesStore devicesStore, DeviceConfig deviceConfig)
+        public DeviceManager()
         {
-            _deviceStore = devicesStore;
-            _deviceConfig = deviceConfig;
             _connectLimit = new SemaphoreSlim(3);
             _checkStatusLimit = new SemaphoreSlim(5);
+            _deviceConfig = new DeviceConfig();
+        }
+
+        public void Initialize(DevicesStore devicesStore, DeviceConfig deviceConfig)
+        {
+            _devices = devicesStore.Devices;
+            _connectableDevices = _devices.OfType<IConnectableDevice>().ToList();
+            foreach (var d in _connectableDevices)
+            {
+                d.ConnectionChanged -= Device_ConnectionChanged;
+                d.ConnectionChanged += Device_ConnectionChanged;
+            }
+            _ioDeviceContexts = devicesStore.IoDeviceContext;
+            _deviceConfig = deviceConfig;
+        }
+
+        private async void Device_ConnectionChanged(string name, bool status)
+        {
+            var iodc = _ioDeviceContexts.FirstOrDefault(c => c.Device.Name == name);
+            if (status)
+            {
+                if (!iodc.IsStartedUpdatingDios)
+                    _ = iodc.StartUpdatingDios();
+            }
+            else
+            {
+                if (iodc.IsStartedUpdatingDios)
+                    await iodc.StopUpdatingDios();
+            }
         }
 
         /* Connection */
-        public async Task<int> ConnectAllAsync()
+        public async Task<Dictionary<string, bool>> ConnectAllAsync()
         {
-            List<Task<bool>> tasks = new List<Task<bool>>();
-            var devices = _deviceStore.Devices.OfType<IConnectableDevice>();
-            foreach (var device in devices)
-            {
-                string name = device.Name;
-                if (!_deviceConfig.SocketConfigs.TryGetValue(name, out var config))
-                    continue;
-                tasks.Add(ConnectAsync(device, config));
-            }
-            bool[] results = await Task.WhenAll(tasks);
-            //Log: Connected {count} out of {_deviceStore.Devices.count} devices
-            return results.Count(b => b);
+            var tasks = _devices
+                .OfType<IConnectableDevice>()
+                .Where(d => _deviceConfig.SocketConfigs.ContainsKey(d.Name))
+                .Select(d => ConnectAsync(d, _deviceConfig.SocketConfigs[d.Name]));
+
+            (string Name, bool Value)[] results = await Task.WhenAll(tasks);
+
+            return results.ToDictionary(r => r.Name, r => r.Value);
         }
 
-        public async Task<bool> ConnectAsync(IConnectableDevice device, IConnectionConfig config)
+        public async Task<(string Name, bool Value)> ConnectAsync(
+            IConnectableDevice device,
+            IConnectionConfig config)
         {
             await _connectLimit.WaitAsync();
             try
             {
-                return await Task.Run(() => device.Connect(config));
+                bool isConnected = await Task.Run(() => device.Connect(config));
+                return (device.Name, isConnected);
             }
             catch (Exception ex)
             {
-                //LOG
-                return false;
+                return (device.Name, false);
             }
             finally
             {
                 _connectLimit.Release();
             }
-        }
-
-        public async Task<bool> CheckConnection(string name)
-        {
-            if (!_deviceStore.TryGetConnectableDevice(name, out IConnectableDevice device))
-                return false;
-            return device.CheckConnection();
         }
 
         /* Polling */
@@ -82,7 +98,7 @@ namespace SBC_2D.Infrastructures.Device
                 {
                     while (!_ctsKeepUpdateStatus.Token.IsCancellationRequested)
                     {
-                        var tasks = _deviceStore.Devices
+                        var tasks = _devices
                             .OfType<IConnectableDevice>()
                             .Select(device => Task.Run(() =>
                             {
@@ -96,12 +112,12 @@ namespace SBC_2D.Infrastructures.Device
                             }));
 
                         await Task.WhenAll(tasks);
-
                         await Task.Delay(1000, _ctsKeepUpdateStatus.Token);
                     }
                 }
                 catch (OperationCanceledException)
                 {
+                    //出問題要waring
                 }
             });
             return _updateStatusTask;
@@ -129,6 +145,7 @@ namespace SBC_2D.Infrastructures.Device
             }
             catch (Exception ex)
             {
+                //出問題要waring
             }
             finally
             {
@@ -138,71 +155,26 @@ namespace SBC_2D.Infrastructures.Device
             }
         }
 
-        public Task StartUpdatingDios()
+        public async Task StartUpdatingAllDios()
         {
-            _ctsKeepUpdateDios = new CancellationTokenSource();
-            _updateDiosTask = Task.Run(async () =>
-            {
-                try
-                {
-                    while (!_ctsKeepUpdateDios.Token.IsCancellationRequested)
-                    {
-                        var tasks = _deviceStore.IoDeviceContext
-                        .Select(ctx => Task.Run(() =>
-                        {
-                            try
-                            {
-                                ctx.UpdateDis();
-                                ctx.UpdateDos();
-                            }
-                            catch (Exception ex)
-                            {
-                            }
-                        }));
-
-                        await Task.WhenAll(tasks);
-                        await Task.Delay(100, _ctsKeepUpdateDios.Token);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                }
-                catch (Exception ex)
-                {
-                }
-            });
-
-            return _updateDiosTask;
+            var tasks = new List<Task>();
+            foreach (var iodc in _ioDeviceContexts)
+                tasks.Add(iodc.StartUpdatingDios());
+            await Task.WhenAll(tasks);
         }
 
-        public async Task StopUpdatingDios()
+        public async Task StopUpdatingAllDios()
         {
-            if (_ctsKeepUpdateDios == null)
-                return;
-
-            _ctsKeepUpdateDios.Cancel();
-
-            try
-            {
-                if (_ctsKeepUpdateDios != null)
-                    await _updateDiosTask;
-            }
-            catch (TaskCanceledException)
-            {
-                // 忽略，代表正常停止
-            }
-            finally
-            {
-                _ctsKeepUpdateDios.Dispose();
-                _ctsKeepUpdateDios = null;
-                _updateDiosTask = null;
-            }
+            var tasks = new List<Task>();
+            foreach (var iodc in _ioDeviceContexts)
+                tasks.Add(iodc.StopUpdatingDios());
+            await Task.WhenAll(tasks);
         }
 
         public bool ControlDo(int systemIndex, bool isOn)
         {
             int index = -1;
-            foreach (var iodc in _deviceStore.IoDeviceContext)
+            foreach (var iodc in _ioDeviceContexts)
             {
                 if (iodc.TryToDeviceDo(systemIndex, out index))
                 {
@@ -217,7 +189,7 @@ namespace SBC_2D.Infrastructures.Device
         {
             isOn = false;
             bool isInversed = false;
-            foreach (var iodc in _deviceStore.IoDeviceContext)
+            foreach (var iodc in _ioDeviceContexts)
             {
                 if (iodc.TryToDeviceDo(systemIndex, out int index))
                 {

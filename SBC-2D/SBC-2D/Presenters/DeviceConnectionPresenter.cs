@@ -1,7 +1,6 @@
 ﻿using SBC_2D.Domain.Servicies;
 using SBC_2D.Infrastructures.Device;
 using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Shared;
 using SBC_2D.Views.Interfaces;
 using SBC_2D.Views.UserControls;
 using System;

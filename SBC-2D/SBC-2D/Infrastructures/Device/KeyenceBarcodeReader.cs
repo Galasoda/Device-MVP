@@ -1,5 +1,4 @@
 ﻿using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Shared;
 using System;
 using System.Net;
 using System.Net.Sockets;

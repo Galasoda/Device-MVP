@@ -1,5 +1,4 @@
-﻿using SBC_2D.ViewModels;
-using SBC_2D.Views.Interfaces;
+﻿using SBC_2D.Views.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

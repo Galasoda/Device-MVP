@@ -1,7 +1,5 @@
 ﻿using SBC_2D.Infrastructures.Ini;
 using SBC_2D.Presenters;
-using SBC_2D.Shared;
-using SBC_2D.ViewModels;
 using SBC_2D.Views.Interfaces;
 using System;
 using System.ComponentModel;
@@ -26,11 +24,27 @@ namespace SBC_2D.Views.UserControls
             buttonConnect.Click += (s, e) => RequestConnection?.Invoke(this,
                 new EndPointArgs(textBoxIP.Text, int.TryParse(textBoxPort.Text, out int p) ? p : -1));
         }
-        public void SetName(string name) => SafeInvoke(() => labelDevice.Text = name);
+        public void SetName(string name)
+        {
+            SafeInvoke(() =>
+            {
+                labelDevice.Text = name;
+                int lbWidth = labelDevice.Width;
+                int left = labelDevice.Left;
+                Width = left + lbWidth;
+                
+                //labelDevice.Width = txtWidth;
+                //if (Width < left + lbWidth)
+                //    Width = left + lbWidth;
+                //else
+
+            });
+        }
         public void SetIp(string ip) => SafeInvoke(() => { if (textBoxIP.Text != ip) textBoxIP.Text = ip; });
         public void SetPort(string port) => SafeInvoke(() => { if (textBoxPort.Text != port) textBoxPort.Text = port; });
         public void SetConnecting(bool value) => SafeInvoke(() => { buttonConnect.Text = value ? "連線中..." : "連線"; buttonConnect.Enabled = !value; });
         public void SetConnected(bool value) => SafeInvoke(() => panelStatus.BackColor = value ? Color.Green : Color.Gray);
+
         private void SafeInvoke(Action action)
         {
             if (IsDisposed || Disposing) return;

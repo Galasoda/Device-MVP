@@ -1,7 +1,6 @@
 ﻿using Advantech.Adam;
 using SBC_2D.Infrastructures.Device;
 using SBC_2D.Infrastructures.Ini;
-using SBC_2D.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
